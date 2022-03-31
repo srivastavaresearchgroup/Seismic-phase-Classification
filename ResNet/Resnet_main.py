@@ -15,33 +15,29 @@ from ResNet_model import ResNet
 from ResNet_model import resnet18,resnet34,resnet50,resnet101,resnet152,resnext50_32x4d,resnext101_32x8d
 from scipy.special import softmax
 
-
-filename = './scsn_ps_2000_2017_shuf.hdf5'
-
-# reading file
-f = h5py.File(filename,'r') 
-
-
-train_x = f['X'][:3819000,:]# dimension: (4773750, 400, 3)
-train_y = f['Y'][:3819000] # 0,1,2, shape: (4773750,)
-
-test_x = f['X'][4535062:,:]
-test_y = f['Y'][4535062:]
-
-
 parser = argparse.ArgumentParser(description='ResNet classification')
 parser.add_argument('--cuda', action='store_true', help='Choose device to use cpu cuda')
 parser.add_argument('--batch_size', action='store', type=int, 
-                        default=480, help='number of data in a batch')
+                        default=4, help='number of data in a batch')
 parser.add_argument('--lr', action='store', type=float, 
                         default=0.001, help='initial learning rate')
 parser.add_argument('--epochs', action='store', type=int, 
-                        default = 50, help='train rounds over training set')
+                        default = 1, help='train rounds over training set')
 parser.add_argument('--num_classes', action='store', type=int, 
                         default = 3, help='total number of classes in dataset')
 
+filename = './scsn_ps_2000_2017_shuf.hdf5'
+# reading file
+f = h5py.File(filename,'r') 
 
-""""dataloader"""
+# example
+train_x = f['X'][:800,:]# dimension: (4773750, 400, 3)
+train_y = f['Y'][:800] # 0,1,2, shape: (4773750,)
+
+test_x = f['X'][800:1000,:]
+test_y = f['Y'][800::1000]
+
+# dataloader
 class get_dataset(Dataset):
     def __init__(self, x, y):
         self.x = torch.from_numpy(x)
@@ -52,7 +48,7 @@ class get_dataset(Dataset):
         return len(self.y)
 
 train_tensor_dataset = get_dataset(train_x, train_y)
-test_tensor_dataset = get_dataset(test_x, test_y)
+test_tensor_dataset  = get_dataset(test_x, test_y)
 
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -74,7 +70,7 @@ def main(args):
         model.train()
         for step, (images, labels) in enumerate(train_loader):
             labels = labels.to(device)
-            outputs = model(torch.transpose(images,2,1).to(device))  # transpose
+            outputs = model(torch.transpose(images,2,1).to(device))   
             loss = criterion(outputs, labels.long())
             batch_loss.append(loss.item())
             optimizer.zero_grad()
@@ -141,12 +137,12 @@ def main(args):
    test_loss_dataframe = pd.DataFrame( data = test_loss)
    test_acc_dataframe = pd.DataFrame(data = test_acc)
    test_loss_dataframe.to_csv('./test_loss.csv',index=False, header=False)
-   test_acc_dataframe.to_csv('.//test_accuracy.csv',index=False, header = False)
+   test_acc_dataframe.to_csv('./test_accuracy.csv',index=False, header = False)
 
    out = torch.cat(out,dim=0)
    pre = out.detach().numpy()
   
-   ## confusion matrix plotting
+   # confusion matrix plotting
    cm = confusion_matrix(test_y.tolist(), pre)
    multi_label = ['P', 'S', 'N']
    tick_marks = np.arange(len(multi_label))
@@ -163,7 +159,7 @@ def main(args):
    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.GnBu)
    plt.title('Confusion Matrix', fontsize= 12)
    plt.colorbar()
-   plt.savefig('./cm.jpeg', dpi =600)
+   plt.savefig('./cm_resnet.jpeg', dpi =600)
    plt.close()
 
    print(metrics.classification_report(test_y.tolist(), pre, target_names = multi_label, digits=6))
