@@ -1,8 +1,5 @@
 import os
 import sys
-curPath = os.path.abspath(os.path.dirname(__file__))
-rootPath = os.path.split(curPath)[0]
-sys.path.append(rootPath)
 import h5py
 import argparse
 import matplotlib.pyplot as plt
@@ -25,7 +22,7 @@ parser.add_argument('--batch_size', action='store', type=int,
 parser.add_argument('--lr', action='store', type=float, 
                         default=0.001, help='initial learning rate')
 parser.add_argument('--epochs', action='store', type=int, 
-                        default = 50, help='train rounds over training set')
+                        default = 1, help='train rounds over training set')
 parser.add_argument('--num_classes', action='store', type=int, 
                         default = 2, help='total number of classes in dataset')
 
