@@ -18,18 +18,21 @@ from MB_ResNet_model import BasicBlock, Bottleneck, ResNet, resnet18,resnet34
 parser = argparse.ArgumentParser(description='ResNet classification')
 parser.add_argument('--cuda', action='store_true', help='Choose device to use cpu cuda')
 parser.add_argument('--batch_size', action='store', type=int, 
-                        default=480, help='number of data in a batch')
+                        default=4, help='number of data in a batch')
 parser.add_argument('--lr', action='store', type=float, 
                         default=0.001, help='initial learning rate')
 parser.add_argument('--epochs', action='store', type=int, 
                         default = 1, help='train rounds over training set')
-parser.add_argument('--num_classes', action='store', type=int, 
-                        default = 2, help='total number of classes in dataset')
+
 
 ## file
 filename = './scsn_ps_2000_2017_shuf.hdf5'
 ## reading file
 f = h5py.File(filename,'r') 
+
+'''
+an example
+'''
 
 ## two classification: noise/non-noise
 x_train_1 = f['X']
@@ -39,18 +42,18 @@ for i in range(y_train_1.shape[0]):
     if f['Y'][i] ==0 or f['Y'][i] == 1:
         yy_train[i] = 0
 yy_train = np.array(yy_train)
-x_train_coarse = x_train_1[:4296375,:]
-y_train_coarse = yy_train[:4296375]
+x_train_coarse = x_train_1[:800,:]
+y_train_coarse = yy_train[:800]
 
-x_test_coarse = x_train_1[4535062:,:]
-y_test_coarse = yy_train[4535062:]
+x_test_coarse = x_train_1[800:1000,:]
+y_test_coarse = yy_train[800:1000]
 
 ## 3 classification: P/S
-x_train_fine = f['X'][:4296375,:]# dimension: (4773750, 400, 3)
-y_train_fine = f['Y'][:4296375] # P:0, S:1, N:2, shape: (4773750,)
+x_train_fine = f['X'][:800,:]
+y_train_fine = f['Y'][:1000] 
 
-x_test_fine  = f['X'][4535062:,:]
-y_test_fine  = f['Y'][4535062:]
+x_test_fine  = f['X'][800:1000,:]
+y_test_fine  = f['Y'][800:1000]
 
 ## dataload
 class get_dataset(Dataset):
@@ -81,9 +84,8 @@ def main(arngs):
     train_acc1 = []
     train_loss2 = []
     train_acc2 = []
-    best_accuracy = 0.9
     train_loss_final =[]
-    
+    best_accuracy = 0.9
     for epoch in range(args.epochs):
         batch_loss1 = []
         batch_accuracy1 =[]
@@ -134,7 +136,7 @@ def main(arngs):
         if sum(batch_accuracy2)/len(batch_accuracy2) > best_accuracy:
             best_accuracy = sum(batch_accuracy2)/len(batch_accuracy2)
             model_name = 'time_ResNet_parameter_'+str(sum(batch_accuracy2)/len(batch_accuracy2))
-            torch.save(model.state_dict(), '/home/wli/Phase_detection/Time/ResNet_raw_hc/' + model_name + '.pkl')
+            torch.save(model.state_dict(), './' + model_name + '.pkl')
    
     plt.figure()
     plt.plot(train_acc1, '.-r', label = 'Coarse')
@@ -185,6 +187,7 @@ def main(arngs):
             accuracy_coarse = (pred_coarse.cpu() == labels_coarse.cpu()).sum().item() / labels_coarse.cpu().size(0)
             test_accuracy_coarse.append(accuracy_coarse)
             print('Batch Coarse Test Accuracy = ', accuracy_coarse)
+            
             ## classification 2
             _, pred_fine = torch.max(outputs_fine.data, 1)
             labels_fine = labels_fine.to(device)
@@ -200,8 +203,8 @@ def main(arngs):
             loss = 0.5*loss_coarse + 0.5*loss_fine
             test_loss_final.append(loss.item())
     
-    print('Coarse Test Accuracy = ', correct_coarse / total_coarse, file = doc)
-    print('Fine Test Accuracy = ', correct_fine/total_fine, file = doc)
+    print('Coarse Test Accuracy = ', correct_coarse / total_coarse)
+    print('Fine Test Accuracy = ', correct_fine/total_fine)
     
 
     out_coarse = torch.cat(out_coarse, dim=0)
