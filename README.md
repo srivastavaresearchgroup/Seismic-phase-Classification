@@ -20,3 +20,4 @@ The models provided here are implemented in Pytorch.
 
 ## Cite
 If you use this code for your research, please cite it with the following bibtex entry.
+Li, W., Sha, Y., Zhou, K., Faber, J., Ruempker, G., Stoecker, H., and Srivastava, N., 2022. Deep Learning-based Small Magnitude Earthquake Detection and Seismic Phase Classification. arXiv preprint arXiv:2204.02870.
